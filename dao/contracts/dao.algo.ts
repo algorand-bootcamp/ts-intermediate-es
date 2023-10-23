@@ -7,6 +7,9 @@ class Dao extends Contract {
   totalVotes = GlobalStateKey<number>();
   favorVotes = GlobalStateKey<number>();
   registeredAsa = GlobalStateKey<Asset>();
+
+  // Declarar una variable en local state
+  individualFavor = LocalStateKey<boolean>();
     
   createApplication(proposal: string): void {
     this.proposal.value = proposal;
@@ -23,7 +26,7 @@ class Dao extends Contract {
     return registeredAsa;
   }
 
-  register(registeredAsa: Asset): void {
+  optInToApplication(registeredAsa: Asset): void {
     // Verificamos que el solicitante no tenga el asset aun
     assert(this.txn.sender.assetBalance(this.registeredAsa.value) === 0)
 
@@ -44,6 +47,11 @@ class Dao extends Contract {
 
   vote(inFavor: boolean, registeredAsa: Asset): void {
     assert(this.txn.sender.assetBalance(this.registeredAsa.value) >= 1)
+    // Agregar el voto en local state
+    assert(!this.individualFavor(this.txn.sender).exists)
+
+    this.individualFavor(this.txn.sender).value = inFavor;
+
     this.totalVotes.value = this.totalVotes.value + 1;
     if (inFavor) this.favorVotes.value = this.favorVotes.value + 1;
   }

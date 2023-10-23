@@ -74,7 +74,7 @@ describe('Dao', () => {
     await expect(appClient.vote({inFavor: true, registeredAsa })).rejects.toThrow()
   })
 
-  test('register', async() => {
+  test('optin', async() => {
     try {
 
       const optinTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
@@ -88,7 +88,7 @@ describe('Dao', () => {
 
 
       // Modificamos el fee para cubrir el transfer de asset y el asset freeze
-      await appClient.register({ registeredAsa }, {
+      await appClient.optIn.optInToApplication({ registeredAsa }, {
         sender,
         sendParams: {
           fee: algokit.microAlgos(3_000)
@@ -110,15 +110,30 @@ describe('Dao', () => {
     expect(proposalFromMethod.return?.valueOf()).toBe(proposal);
   });
 
-  test('voto a favor', async () => {
+  test('votacion', async () => {
     await appClient.vote({ inFavor: true, registeredAsa }, { sender });
     const totalVotesFromMethod = await appClient.getVotes({});
     expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(1), BigInt(1)]);
+    
   })
 
-  test('voto en contra', async () => {
-    await appClient.vote({ inFavor: false, registeredAsa }, { sender });
-    const totalVotesFromMethod = await appClient.getVotes({});
-    expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(2), BigInt(1)]);
+  test('clearstate', async () => {
+    await appClient.clearState({ sender });
+    
+    await expect(
+      appClient.optIn.optInToApplication({ registeredAsa }, {
+        sender,
+        sendParams: {
+          fee: algokit.microAlgos(3_000)
+        }
+      })
+      
+      ).rejects.toThrow()
+    // appClient.vote({ inFavor: false, registeredAsa }, { sender })
+    // const totalVotesFromMethod = await appClient.getVotes({});
+    // expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(2), BigInt(1)]);
+
+    
   })
+
 });
