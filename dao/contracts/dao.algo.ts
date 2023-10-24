@@ -20,7 +20,8 @@ class Dao extends Contract {
     assert(!this.registeredAsa.exists)
     const registeredAsa = sendAssetCreation({
       configAssetTotal: 1_000,
-      configAssetFreeze: this.app.address
+      configAssetFreeze: this.app.address,
+      configAssetClawback: this.app.address
     })
     this.registeredAsa.value = registeredAsa;
     return registeredAsa;
@@ -42,6 +43,30 @@ class Dao extends Contract {
       freezeAsset: this.registeredAsa.value,
       freezeAssetAccount: this.txn.sender,
       freezeAssetFrozen: true
+    })
+  }
+
+
+  private cerrarVoto(): void {
+    
+  }
+
+  clearState(): void {
+    // Eliminar el voto del usuario del total de votos
+    if(this.individualFavor(this.txn.sender).exists) {
+      this.totalVotes.value = this.totalVotes.value - 1;
+      // Eliminar el voto del usuario si fue a favor del total a favor
+      if(this.individualFavor(this.txn.sender).value) {
+        this.favorVotes.value = this.favorVotes.value - 1;
+      }
+    }
+
+    // Hacer clawback para quitar el asset que ya tiene el user
+    sendAssetTransfer({
+      xferAsset: this.registeredAsa.value,
+      assetAmount: 1,
+      assetReceiver: this.app.address,
+      assetSender: this.txn.sender
     })
   }
 

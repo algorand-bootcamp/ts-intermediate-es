@@ -117,23 +117,15 @@ describe('Dao', () => {
     
   })
 
-  test('clearstate', async () => {
+  test('clearstate', async() => {
     await appClient.clearState({ sender });
-    
-    await expect(
-      appClient.optIn.optInToApplication({ registeredAsa }, {
-        sender,
-        sendParams: {
-          fee: algokit.microAlgos(3_000)
-        }
-      })
-      
-      ).rejects.toThrow()
-    // appClient.vote({ inFavor: false, registeredAsa }, { sender })
-    // const totalVotesFromMethod = await appClient.getVotes({});
-    // expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(2), BigInt(1)]);
-
-    
+    await appClient.optIn.optInToApplication({ registeredAsa }, {
+      sender,
+      sendParams: {
+        fee: algokit.microAlgos(3_000)
+      }
+    })
+    const totalVotesFromMethod = await appClient.getVotes({});
+    expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(0), BigInt(0)]);
   })
-
 });
