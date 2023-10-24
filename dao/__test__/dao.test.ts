@@ -117,15 +117,62 @@ describe('Dao', () => {
     
   })
 
-  test('clearstate', async() => {
-    await appClient.clearState({ sender });
+
+  test('closeout', async() => {
+    // Se realiza el closeout del local state y clawback
+    await appClient.closeOut.closeOutOfApplication(
+      { registeredAsa },
+      { sender, sendParams: { fee: algokit.microAlgos(2_000)} }
+    )
+
+    // Verificar que se haya eliminado los votos
+    let totalVotesFromMethod = await appClient.getVotes({});
+    expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(0), BigInt(0)]);
+
+    // Verificar que no pueda votar ya que no tiene el asset ni tiene opt in
+    await expect(appClient.vote({ inFavor: true, registeredAsa }, { sender }))
+    .rejects
+    .toThrow()
+
+    // Hacer una txn de closeout al asset
+
+    const { appAddress } = await appClient.appClient.getAppReference();
+
+    const assetClouseOutTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+      from: sender.addr,
+      amount: 0,
+      suggestedParams: await algokit.getTransactionParams(undefined, algod),
+      assetIndex: Number(registeredAsa),
+      to: appAddress,
+      closeRemainderTo: appAddress
+
+    })
+
+    await algokit.sendTransaction({ from: sender, transaction: assetClouseOutTxn }, algod);
+
+    // Hasta acá ya se eliminó completamente la relación de la cuenta con el app
+
+    const optinTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+      from: sender.addr,
+      to: sender.addr,
+      amount: 0,
+      suggestedParams: await algokit.getTransactionParams(undefined, algod),
+      assetIndex: Number(registeredAsa)
+    })
+    await algokit.sendTransaction({ from: sender, transaction: optinTxn }, algod);
+
     await appClient.optIn.optInToApplication({ registeredAsa }, {
       sender,
       sendParams: {
         fee: algokit.microAlgos(3_000)
       }
     })
-    const totalVotesFromMethod = await appClient.getVotes({});
-    expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(0), BigInt(0)]);
+    
+
+    await appClient.vote({ inFavor: true, registeredAsa }, { sender })
+    totalVotesFromMethod = await appClient.getVotes({});
+    expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(1), BigInt(1)]);
+
   })
+
 });

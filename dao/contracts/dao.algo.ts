@@ -48,10 +48,6 @@ class Dao extends Contract {
 
 
   private cerrarVoto(): void {
-    
-  }
-
-  clearState(): void {
     // Eliminar el voto del usuario del total de votos
     if(this.individualFavor(this.txn.sender).exists) {
       this.totalVotes.value = this.totalVotes.value - 1;
@@ -60,6 +56,10 @@ class Dao extends Contract {
         this.favorVotes.value = this.favorVotes.value - 1;
       }
     }
+  }
+
+  closeOutOfApplication(registeredAsa: Asset): void {
+    this.cerrarVoto();
 
     // Hacer clawback para quitar el asset que ya tiene el user
     sendAssetTransfer({
@@ -68,6 +68,10 @@ class Dao extends Contract {
       assetReceiver: this.app.address,
       assetSender: this.txn.sender
     })
+  }
+
+  clearState(): void {
+    this.cerrarVoto();
   }
 
   vote(inFavor: boolean, registeredAsa: Asset): void {
