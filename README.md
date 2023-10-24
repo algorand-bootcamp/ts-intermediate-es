@@ -16,6 +16,9 @@ Si quieres ir a una versión o paso específico del curso solo debes escribir `g
 2. v201 - Localstate y clearstate
 3. v202 - Clawback y clearstate
 4. v203 - Agregando closeout
+5. v204 - Agregando Boxes
+6. v205 - Refactorizando closeout y optin
+7. v206 - testing de los boxes
 
 Lo recomendable es que inicies con el tag `v201`, escribiendo `git checkout v201`
 
