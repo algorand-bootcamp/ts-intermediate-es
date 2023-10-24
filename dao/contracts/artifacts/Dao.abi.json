@@ -27,7 +27,7 @@
       }
     },
     {
-      "name": "optInToApplication",
+      "name": "register",
       "args": [
         {
           "name": "registeredAsa",
@@ -42,7 +42,7 @@
       }
     },
     {
-      "name": "closeOutOfApplication",
+      "name": "deregister",
       "args": [
         {
           "name": "registeredAsa",
@@ -59,6 +59,11 @@
     {
       "name": "vote",
       "args": [
+        {
+          "name": "MBRPayment",
+          "type": "pay",
+          "desc": ""
+        },
         {
           "name": "inFavor",
           "type": "bool",

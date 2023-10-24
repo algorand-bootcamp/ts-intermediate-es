@@ -19,6 +19,41 @@ describe('Dao', () => {
 
   const proposal = 'Nueva propuesta';
 
+  const vote = async(inFavor: boolean) => {
+    const { appAddress } = await appClient.appClient.getAppReference();
+    
+    const MBRPayment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      from: sender.addr,
+      to: appAddress,
+      amount: 15_700,
+      suggestedParams: await algokit.getTransactionParams(undefined, algod)
+    })
+    await appClient.vote(
+      { MBRPayment, inFavor: true, registeredAsa },
+      { sender, boxes: [algosdk.decodeAddress(sender.addr).publicKey]}
+      )
+  }
+
+  const register = async() => {
+    const optinTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+      from: sender.addr,
+      to: sender.addr,
+      amount: 0,
+      suggestedParams: await algokit.getTransactionParams(undefined, algod),
+      assetIndex: Number(registeredAsa)
+    })
+    await algokit.sendTransaction({ from: sender, transaction: optinTxn }, algod);
+
+
+    // Modificamos el fee para cubrir el transfer de asset y el asset freeze
+    await appClient.register({ registeredAsa }, {
+      sender,
+      sendParams: {
+        fee: algokit.microAlgos(3_000)
+      }
+    })
+  }
+
   beforeAll(async () => {
     await fixture.beforeEach();
     const { testAccount, kmd } = fixture.context;
@@ -71,33 +106,11 @@ describe('Dao', () => {
   })
 
   test('votar sin asset', async() => {
-    await expect(appClient.vote({inFavor: true, registeredAsa })).rejects.toThrow()
+    await expect(vote(true)).rejects.toThrow()
   })
 
-  test('optin', async() => {
-    try {
-
-      const optinTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        from: sender.addr,
-        to: sender.addr,
-        amount: 0,
-        suggestedParams: await algokit.getTransactionParams(undefined, algod),
-        assetIndex: Number(registeredAsa)
-      })
-      await algokit.sendTransaction({ from: sender, transaction: optinTxn }, algod);
-
-
-      // Modificamos el fee para cubrir el transfer de asset y el asset freeze
-      await appClient.optIn.optInToApplication({ registeredAsa }, {
-        sender,
-        sendParams: {
-          fee: algokit.microAlgos(3_000)
-        }
-      })
-    } catch(e) {
-      console.warn(e);
-      throw e;
-    }
+  test('register', async() => {
+    register();
   })
 
   test('getRegisteredAsa', async () => {
@@ -111,18 +124,20 @@ describe('Dao', () => {
   });
 
   test('votacion', async () => {
-    await appClient.vote({ inFavor: true, registeredAsa }, { sender });
+    await vote(true);
     const totalVotesFromMethod = await appClient.getVotes({});
     expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(1), BigInt(1)]);
     
   })
 
 
-  test('closeout', async() => {
+  test('deregister', async() => {
     // Se realiza el closeout del local state y clawback
-    await appClient.closeOut.closeOutOfApplication(
+    await appClient.deregister(
       { registeredAsa },
-      { sender, sendParams: { fee: algokit.microAlgos(2_000)} }
+      { sender, 
+        boxes: [algosdk.decodeAddress(sender.addr).publicKey],
+        sendParams: { fee: algokit.microAlgos(3_000)} }
     )
 
     // Verificar que se haya eliminado los votos
@@ -130,7 +145,7 @@ describe('Dao', () => {
     expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(0), BigInt(0)]);
 
     // Verificar que no pueda votar ya que no tiene el asset ni tiene opt in
-    await expect(appClient.vote({ inFavor: true, registeredAsa }, { sender }))
+    await expect(vote(true))
     .rejects
     .toThrow()
 
@@ -150,26 +165,10 @@ describe('Dao', () => {
 
     await algokit.sendTransaction({ from: sender, transaction: assetClouseOutTxn }, algod);
 
-    // Hasta acá ya se eliminó completamente la relación de la cuenta con el app
-
-    const optinTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-      from: sender.addr,
-      to: sender.addr,
-      amount: 0,
-      suggestedParams: await algokit.getTransactionParams(undefined, algod),
-      assetIndex: Number(registeredAsa)
-    })
-    await algokit.sendTransaction({ from: sender, transaction: optinTxn }, algod);
-
-    await appClient.optIn.optInToApplication({ registeredAsa }, {
-      sender,
-      sendParams: {
-        fee: algokit.microAlgos(3_000)
-      }
-    })
+    await register();
     
 
-    await appClient.vote({ inFavor: true, registeredAsa }, { sender })
+    await vote(true)
     totalVotesFromMethod = await appClient.getVotes({});
     expect(totalVotesFromMethod.return?.valueOf()).toEqual([BigInt(1), BigInt(1)]);
 
