@@ -26,7 +26,7 @@ class Dao extends Contract {
     return registeredAsa;
   }
 
-  optInToApplication(registeredAsa: Asset): void {
+  register(registeredAsa: Asset): void {
     // Verificamos que el solicitante no tenga el asset aun
     assert(this.txn.sender.assetBalance(this.registeredAsa.value) === 0)
 
@@ -45,8 +45,7 @@ class Dao extends Contract {
     })
   }
 
-
-  private cerrarVoto(): void {
+  deregister(registeredAsa: Asset): void {
     // Eliminar el voto del usuario del total de votos
     if(this.individualFavor(this.txn.sender).exists) {
       this.totalVotes.value = this.totalVotes.value - 1;
@@ -55,10 +54,15 @@ class Dao extends Contract {
         this.favorVotes.value = this.favorVotes.value - 1;
       }
     }
-  }
 
-  closeOutOfApplication(registeredAsa: Asset): void {
-    this.cerrarVoto();
+    const preMBR = this.app.address.minBalance;
+    this.individualFavor(this.txn.sender).delete();
+
+    // Regresar el MBR enviado del box
+    sendPayment({
+      receiver: this.txn.sender,
+      amount: preMBR - this.app.address.minBalance
+    })
 
     // Hacer clawback para quitar el asset que ya tiene el user
     sendAssetTransfer({
@@ -67,10 +71,6 @@ class Dao extends Contract {
       assetReceiver: this.app.address,
       assetSender: this.txn.sender
     })
-  }
-
-  clearState(): void {
-    this.cerrarVoto();
   }
 
   vote(MBRPayment: PayTxn, inFavor: boolean, registeredAsa: Asset): void {
