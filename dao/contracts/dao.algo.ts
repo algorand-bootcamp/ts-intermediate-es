@@ -8,8 +8,7 @@ class Dao extends Contract {
   favorVotes = GlobalStateKey<number>();
   registeredAsa = GlobalStateKey<Asset>();
 
-  // Declarar una variable en local state
-  individualFavor = LocalStateKey<boolean>();
+  individualFavor = BoxMap<Address, boolean>();
     
   createApplication(proposal: string): void {
     this.proposal.value = proposal;
@@ -74,12 +73,17 @@ class Dao extends Contract {
     this.cerrarVoto();
   }
 
-  vote(inFavor: boolean, registeredAsa: Asset): void {
+  vote(MBRPayment: PayTxn, inFavor: boolean, registeredAsa: Asset): void {
     assert(this.txn.sender.assetBalance(this.registeredAsa.value) >= 1)
-    // Agregar el voto en local state
     assert(!this.individualFavor(this.txn.sender).exists)
 
+    const preBoxMBR = this.app.address.minBalance;
     this.individualFavor(this.txn.sender).value = inFavor;
+
+    verifyTxn(MBRPayment, {
+      receiver: this.app.address,
+      amount: this.app.address.minBalance - preBoxMBR
+    })
 
     this.totalVotes.value = this.totalVotes.value + 1;
     if (inFavor) this.favorVotes.value = this.favorVotes.value + 1;
