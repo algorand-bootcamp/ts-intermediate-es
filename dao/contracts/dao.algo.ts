@@ -9,9 +9,12 @@ class Dao extends Contract {
   registeredAsa = GlobalStateKey<Asset>();
 
   individualFavor = BoxMap<Address, boolean>();
+
+  endTime = GlobalStateKey<number>();
     
-  createApplication(proposal: string): void {
+  createApplication(proposal: string, length: number): void {
     this.proposal.value = proposal;
+    this.endTime.value = globals.latestTimestamp + length;
   }
 
   bootstrap(): Asset {
@@ -76,6 +79,7 @@ class Dao extends Contract {
   vote(MBRPayment: PayTxn, inFavor: boolean, registeredAsa: Asset): void {
     assert(this.txn.sender.assetBalance(this.registeredAsa.value) >= 1)
     assert(!this.individualFavor(this.txn.sender).exists)
+    assert(globals.latestTimestamp < this.endTime.value)
 
     const preBoxMBR = this.app.address.minBalance;
     this.individualFavor(this.txn.sender).value = inFavor;
