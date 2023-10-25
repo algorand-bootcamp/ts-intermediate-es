@@ -19,6 +19,8 @@ Si quieres ir a una versión o paso específico del curso solo debes escribir `g
 5. v204 - Agregando Boxes
 6. v205 - Refactorizando closeout y optin
 7. v206 - testing de los boxes
+8. v207 - Agregando timestamps
+9. v208 - Testing de timestamps
 
 Lo recomendable es que inicies con el tag `v201`, escribiendo `git checkout v201`
 
