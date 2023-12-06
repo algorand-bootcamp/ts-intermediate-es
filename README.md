@@ -26,7 +26,6 @@ Lo recomendable es que inicies con el tag `v201`, escribiendo `git checkout v201
 
 
 ## Grabaciones de las sesiones
-- Sesión #1 [Agregando Local State](https://youtu.be/H4JalPdKt0Q)
-- Sesión #2 Refactorizando el close-out y Clawback
-- Sesión #3 Agregando Box Storage
-- Sesión #4 Agregar logica de tiempos
+- Sesión #1 [Agregando Local State](https://youtu.be/qZs23WWeL8M)
+- Sesión #2 [Refactorizando el close-out y Clawback](https://youtu.be/NJhIwueqCOk)
+- Sesión #3 [Agregando Box Storage y manejo de tiempos](https://youtu.be/8OPW47_GDnU)
